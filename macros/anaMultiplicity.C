@@ -4,6 +4,7 @@
 #include <TCanvas.h>
 #include <TProfile.h>
 #include <TLegend.h>
+#include <TNtuple.h>
 
 #include "commonDefinition.h"
 #include "commonTool.h"
@@ -11,81 +12,115 @@
 
 #define PI 3.1415926535897932384626
 
-void loop(treeData &data,TTree *tData)
+void loop(treeData &data,TTree *tData,char *tag="DATA")
 {
 
-   TH1D *hPtTmp = new TH1D("hPtTmp","",nPtBins,ptBins);
-         
-   TH1D *hMpt[10];
+   TH1D *hPtTmp = new TH1D(Form("%s_hPtTmp",tag),"",nPtBins,ptBins);
+   data.nt = new TNtuple(Form("%s_nt",tag),"","pt:mpt:deta1:dphi1:deta2:dphi2:dR1:dR2:dphiAvg:hiBin:leadingJetPt:subleadingJetPt:leadingJetEta,subleadingJetEta");
+
+
+   Float_t Aj=0;
+   Float_t genAj=0;
+   Float_t genDphi=0;
+   Float_t dphi=0;
+   Float_t avgPhi=0;
+   Float_t genMultDiffPt[5];
+   Float_t multDiffPt[5];
    
-   for (int i=0; i<10; i++) {
-      hMpt[i] = new TH1D(Form("hMpt%d",i),"",1000,-10000,10000);
-      
-   }
-   
-   
+   TTree *t = new TTree(Form("%s_tree",tag),"");
+   t->Branch("hiBin",&data.hiBin,"hiBin/I");
+   t->Branch("leadingJetPt",&data.leadingJetPt,"leadingJetPt/F");
+   t->Branch("leadingJetPhi",&data.leadingJetPhi,"leadingJetPhi/F");
+   t->Branch("leadingJetEta",&data.leadingJetEta,"leadingJetEta/F");
+   t->Branch("subleadingJetPt",&data.subleadingJetPt,"subleadingJetPt/F");
+   t->Branch("subleadingJetPhi",&data.subleadingJetPhi,"subleadingJetPhi/F");
+   t->Branch("subleadingJetEta",&data.subleadingJetEta,"subleadingJetEta/F");
+   t->Branch("genleadingJetPt",&data.genleadingJetPt,"genleadingJetPt/F");
+   t->Branch("genleadingJetPhi",&data.genleadingJetPhi,"genleadingJetPhi/F");
+   t->Branch("genleadingJetEta",&data.genleadingJetEta,"genleadingJetEta/F");
+   t->Branch("gensubleadingJetPt",&data.gensubleadingJetPt,"gensubleadingJetPt/F");
+   t->Branch("gensubleadingJetPhi",&data.gensubleadingJetPhi,"gensubleadingJetPhi/F");
+   t->Branch("gensubleadingJetEta",&data.gensubleadingJetEta,"gensubleadingJetEta/F");
+   t->Branch("multDiff",&data.multDiff,"multDiff/F");
+   t->Branch("genMultDiff",&data.genMultDiff,"genMultDiff/F");
+   t->Branch("multDiffPt",multDiffPt,"multDiffPt[5]/F");
+   t->Branch("genMultDiffPt",genMultDiffPt,"genMultDiffPt[5]/F");
+   t->Branch("Aj",&Aj,"Aj/F");
+   t->Branch("genAj",&genAj,"genAj/F");
+   t->Branch("dphi",&dphi,"dphi/F");
+   t->Branch("genDphi",&genDphi,"genDphi/F");
+
+   t->Branch("coneMult",&data.coneMult,"coneMult/F");
+   t->Branch("genconeMult",&data.genconeMult,"genconeMult/F");
+   t->Branch("coneMultPt",coneMultPt,"coneMultPt[5]/F");
+   t->Branch("genconeMultPt",genconeMultPt,"genconeMultPt[5]/F");
+
+
    int njet=0;
-   for (int i=0;i<tData->GetEntries();i++) {
+   for (int i=0;i<tData->GetEntries()/1.;i++) {
       if (i%1000==0) cout <<i<<" "<<tData->GetEntries()<<endl;
       tData->GetEntry(i);
       //cout <<data.hiBin<<endl;
             
-      double AJ = (data.leadingJetPt-data.subleadingJetPt)/(data.leadingJetPt+data.subleadingJetPt);
-      if (data.hiBin<20&&AJ>0.3&&data.leadingJetPt>120 && data.subleadingJetPt>50 && fabs(deltaPhi(data.leadingJetPhi,data.subleadingJetPhi))>5.*PI/6.) {
-         for (int j=0;j<=nPtBins;j++){
-	    data.missingPt[j]=0;
-	 }
-         for (int j=0;j<data.nTrk;j++) {
-	    
-	    // calculate the distance with respect to leading and subleading jet
-	    double deta1 = data.leadingJetEta-data.trkEta[j];
- 	    double dphi1 = fabs(deltaPhi(data.leadingJetPhi,data.trkPhi[j]));
-	    double deta2 = data.subleadingJetEta-data.trkEta[j];
- 	    double dphi2 = fabs(deltaPhi(data.subleadingJetPhi,data.trkPhi[j]));
-//	    double dR   = sqrt(deta*deta+dphi*dphi);
-	    
-	    data.hMultVsEtaPhi->Fill(deta1,dphi1,data.trkWt[j]);
-	    data.hMultVsEtaPhi->Fill(deta2,dphi2,-data.trkWt[j]);
-	    data.hMultVsEtaPhi->Fill(deta1,-dphi1,data.trkWt[j]);
-	    data.hMultVsEtaPhi->Fill(deta2,-dphi2,-data.trkWt[j]);
-	    data.hMultVsEtaPhi->Fill(-deta1,dphi1,data.trkWt[j]);
-	    data.hMultVsEtaPhi->Fill(-deta2,dphi2,-data.trkWt[j]);
-	    data.hMultVsEtaPhi->Fill(-deta1,-dphi1,data.trkWt[j]);
-	    data.hMultVsEtaPhi->Fill(-deta2,-dphi2,-data.trkWt[j]);
-	    
-	    Float_t avgPhi = getAvePhi(data.leadingJetPhi,data.subleadingJetPhi);
-	    
-	    int ptBin = hPtTmp->GetBin(data.trkPt[j]);
-	    double mpt = data.trkPt[j] * data.trkWt[j] * cos(avgPhi-data.trkPhi[j]);
-	    data.missingPt[ptBin]+= mpt;
-	    data.missingPt[0]+=mpt;
-	 }  
-         njet++;
-	 for (int j=0;j<10;j++){
-	   hMpt[j]->Fill(data.missingPt[j]);
-	 }
+      Aj    = (data.leadingJetPt-data.subleadingJetPt)/(data.leadingJetPt+data.subleadingJetPt);
+      genAj = (data.genleadingJetPt-data.gensubleadingJetPt)/(data.genleadingJetPt+data.gensubleadingJetPt);
+      dphi     = fabs(deltaPhi(data.leadingJetPhi,data.subleadingJetPhi)); 
+      genDphi  = fabs(deltaPhi(data.genleadingJetPhi,data.gensubleadingJetPhi)); 
+
+      
+      // GEN study
+            
+      data.genMultDiff=0;
+      for (int j=0;j<data.nP;j++) {
+         avgPhi = getAvePhi(data.genleadingJetPhi,data.gensubleadingJetPhi);
+         if (cos(avgPhi-data.pPhi[j])>0) {
+            data.genMultDiff++;
+         } else {  
+            data.genMultDiff--;
+         }
       }
+
+      // RECO study
+      data.multDiff=0;
+      for (int j=0;j<data.nTrk;j++) {
+         avgPhi = getAvePhi(data.leadingJetPhi,data.subleadingJetPhi);
+         if (cos(avgPhi-data.trkPhi[j])>0) {
+            data.multDiff+=data.trkWt[j];
+         } else {  
+            data.multDiff-=data.trkWt[j];
+         }
+      }  
+
+      t->Fill();
    }
-   data.hMultVsEtaPhi->Scale(1./njet);
 }
 
-void anaMultiplicity(char *infDataName= "../output-data.root",char *infMCName = "../output-pthat100.root")
+void anaMultiplicity(char *infDataName= "../output-data.root",char *infMCName = "merged.root", char *infPPName = "../output-ppData.root")
 {
 
    TFile *infData = new TFile(infDataName);
    TTree *tData = (TTree*) infData->Get("t");
    TFile *infMC = new TFile(infMCName);
    TTree *tMC = (TTree*) infMC->Get("t");
+   TFile *infPP = new TFile(infPPName);
+   TTree *tPP = (TTree*) infPP->Get("t");
 
+   TFile *outfile = new TFile("ana.root","recreate");
+
+  
    treeData data;
    treeData mc;
-   
+   treeData pp;
+
    loadBranch(data,tData);
    loadBranch(mc,tMC);
-   
-   loop(data,tData);
-   loop(mc,tMC);
-   
+   loadBranch(pp,tPP);
+
+   loop(data,tData,"Data");
+   loop(mc,tMC,"MC");
+   loop(pp,tPP,"PP");
+
+/*   
    TCanvas *c = new TCanvas("c","Data",600,600);
    
    data.hMultVsEtaPhi->Draw("col");
@@ -97,7 +132,7 @@ void anaMultiplicity(char *infDataName= "../output-data.root",char *infMCName = 
    hDiff->Add(mc.hMultVsEtaPhi,-1);
    TCanvas *cDiff = new TCanvas("cDiff","Data-MC",600,600);
    hDiff->Draw("col");
-     
+     */
 /*
    TLegend *leg = new TLegend(0.2,0.2,0.7,0.6);
    leg->SetBorderSize(0);
@@ -108,4 +143,6 @@ void anaMultiplicity(char *infDataName= "../output-data.root",char *infMCName = 
    leg->AddEntry(pGen,"Gen PYTHIA+HYDJET","l");
    */
 //   leg->Draw();
+
+    outfile->Write();
 }
