@@ -7,10 +7,10 @@
 
 #define PI 3.141592653589793238462643
 
-void miniTree(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/HIMC/Jet80/Track8_Jet21_STARTHI53_LV1/merged3/HiForest_Pythia_Hydjet_Jet80_Track8_Jet21_STARTHI53_LV1_merged_forest_0.root")
+void miniTree(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/HIMC/Jet80/Track8_Jet21_STARTHI53_LV1/merged3/HiForest_Pythia_Hydjet_Jet80_Track8_Jet21_STARTHI53_LV1_merged_forest_0.root",collisionType cType = cPbPb)
 {
    // Define the input file and HiForest
-   HiForest *c = new HiForest(infName);
+   HiForest *c = new HiForest(infName,"",cType);
    c->hasHltTree=0;
    c->hasPFTree=0;
    c->hasPhotonTree=0;
@@ -43,9 +43,6 @@ void miniTree(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
    
    JetData data(t,1);
 
-//   HistoData histos_MergedGeneralCalo("MergedGeneral");
-//   HistoData histos2_MergedGeneral("MergedGeneral2");   // phi dependent corr
-   
    TH1D *hWeight = new TH1D("hWeight","",1000,0,100);
    TH1D *hWeight2 = new TH1D("hWeight2","",1000,0,100);
    TH1D *hPt = new TH1D("hPt","",150,0,150);
@@ -63,12 +60,10 @@ void miniTree(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
       data.subleadingJetIt = -1;
       data.genleadingJetPt = -1;
       data.gensubleadingJetPt = -1;
-//      if (data.hiBin>=4) continue;
       
       // Event selection
 //      if (fabs(c->evt.vz)>15) continue;
-      
-      
+//      if (!c->selectEvent()) continue;
       // Select leading and subleading jet
       for (int j=0;j<c->akVs3Calo.nref;j++) {
          if (fabs(c->akVs3Calo.jteta[j])>2) continue;
@@ -103,22 +98,8 @@ void miniTree(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
 	 if (c->akVs3Calo.genpt[j]<data.gensubleadingJetPt) break;	 
       } 
       
-      if (!(data.subleadingJetPt>50&&data.leadingJetPt>120||data.gensubleadingJetPt>50&&data.genleadingJetPt>120)) continue;
+      if (!(data.subleadingJetPt>50&&data.leadingJetPt>100||data.gensubleadingJetPt>50&&data.genleadingJetPt>100)) continue;
       
-      // MPT calculation
-      data.mpt = 0;
-      data.cormpt = 0;
-      data.cormpt2 = 0;
-      data.genMpt = 0;
-      data.genPMpt = 0;
-      /*
-      for (int j=0;j<c->track.nTrk;j++) {
-         if (fabs(c->track.trkEta[j])>2.4) continue;
-	 if (fabs(c->track.trkPt[j])<0.5) continue;
-	 double mptTrk = -c->track.trkPt[j]*cos(c->track.trkPhi[j]-data.leadingJetPhi);
-	 data.mpt+=mptTrk;
-      }
-      */
       data.nTrk=0;
 
       for (int j=0;j<c->track.nTrk;j++) {
@@ -138,27 +119,12 @@ void miniTree(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
          data.nTrk++;
       }
 
-
       data.nP=0;
 
       for (int j=0;j<c->track.nParticle;j++) {
          if (fabs(c->track.pEta[j])>2.4) continue;
 	 if (fabs(c->track.pPt[j])<0.5) continue;
-//	 if (fabs(c->track.pPt[j])>1) continue;
-/*
-	 double mptPTrk = -c->track.pPt[j]*cos(c->track.pPhi[j]-(data.leadingJetPhi+(PI-data.subleadingJetPhi))/2);
-	 data.genPMpt+=mptPTrk;
 
-	 double dphi1 = acos(cos(c->track.pPhi[j]-data.leadingJetPhi));
-         double deta1 = fabs(c->track.pEta[j]-data.leadingJetEta);
-	 
-	 double dr1 = sqrt(dphi1*dphi1+deta1*deta1);
-	 double ptWeight = c->track.pPt[j];
-	 
-	 double mptTrk = -c->track.pPt[j]*cos(c->track.pPhi[j]-data.genleadingJetPhi);
-	 data.genMpt+=mptTrk;
-	 hGenPt->Fill(c->track.pPt[j]);
-	*/ 
 	 data.pPt[data.nP]=c->track.pPt[j];
          data.pEta[data.nP]=c->track.pEta[j];
 	 data.pPhi[data.nP]=c->track.pPhi[j];
@@ -169,9 +135,7 @@ void miniTree(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
       //cout <<data.mpt<<endl;
       t->Fill();
    }
-  // t->Write();
-//   histos_MergedGeneralCalo.calcEff();
-//   histos2_MergedGeneral.calcEff();
+
    output->Write();
    output->Close();
 }
