@@ -4,6 +4,8 @@
 #include <TH1D.h>
 #include <TNtuple.h>
 #include <iostream>
+#include "../fragmentation_JEC/fragmentation_JEC.h"
+
 
 #define PI 3.141592653589793238462643
 
@@ -12,7 +14,7 @@ void dijetMPT(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
    // Define the input file and HiForest
    
    HiForest *c = new HiForest(infName);
-   c->hasPFTree=0;
+ //  c->hasPFTree=0;
    c->hasPhotonTree=0;
    c->hasTowerTree=0;
    c->hasHbheTree=0;
@@ -21,7 +23,7 @@ void dijetMPT(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
    c->hasGenParticleTree=0;   
    c->hasAk5CaloJetTree=0;
    c->hasAkPu2CaloJetTree=0;
-   c->hasAkPu3CaloJetTree=0;
+//   c->hasAkPu3CaloJetTree=0;
    c->hasAkPu4CaloJetTree=0;
    c->hasAkPu5CaloJetTree=0;
    c->hasAkPu2JetTree=0;
@@ -34,6 +36,9 @@ void dijetMPT(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
    c->hasAkVs5PFJetTree=0;
 //   c->doTrackCorrections=1;
 //   c->InitTree();
+   fragmentation_JEC *FF_JEC=new fragmentation_JEC(3, 1, 0, 1,1); //3rd variable is only for when do_PbPb is false
+   FF_JEC->set_correction();
+
    
    // Output file
    TFile *output = new TFile(Form("mptTree-%.0f.root",tag),"recreate");
@@ -71,23 +76,49 @@ void dijetMPT(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
       
       // Event selection
       if (fabs(c->evt.vz)>15) continue;
-      
+//      if (!c->selectEvent()) continue;
+
       // Select leading and subleading jet
       for (int j=0;j<c->akVs3Calo.nref;j++) {
          if (fabs(c->akVs3Calo.jteta[j])>2) continue;
+
+ 
+         int npf=0;
+         for(int ipf=0;ipf<c->pf.nPFpart;ipf++){
+            if(0){
+//               if(FF_JEC->passes_PF_selection(c->pf.pfPt[ipf], c->pf.pfEta[ipf], c->pf.pfPhi[ipf], c->pf.pfId[ipf], ->jteta[j], fjet->jtphi[j])) npf++;
+            }else{
+               if(FF_JEC->passes_PF_selection(c->pf.pfVsPt[ipf], c->pf.pfEta[ipf], c->pf.pfPhi[ipf], c->pf.pfId[ipf], c->akVs3Calo.jteta[j], c->akVs3Calo.jtphi[j])) npf++;
+            }
+         }
+
+        //Then get the corrected pt for each jet before dijet selection by doing
+
+        double corrected_pt=FF_JEC->get_corrected_pt(c->akVs3Calo.jtpt[j], npf, c->evt.hiBin);
+   
+        double residual_corrected_pt=FF_JEC->get_residual_corrected_pt(corrected_pt,c->evt.hiBin);
+        double ptUnCor=c->akVs3Calo.jtpt[j];
+	c->akVs3Calo.jtpt[j]=residual_corrected_pt;
+	
          if (c->akVs3Calo.jtpt[j]>data.leadingJetPt) {
 	    data.leadingJetPt = c->akVs3Calo.jtpt[j];
+	    data.leadingJetPtUnCor = ptUnCor;
 	    data.leadingJetEta = c->akVs3Calo.jteta[j];
 	    data.leadingJetPhi = c->akVs3Calo.jtphi[j];
+	    data.leadingJetRefPt = c->akVs3Calo.refpt[j];
+	    data.leadingJetTrkMax = c->akVs3Calo.trackMax[j];
 	    data.leadingJetIt = j;
 	 }   
 	 if (c->akVs3Calo.jtpt[j]>data.subleadingJetPt && c->akVs3Calo.jtpt[j] < data.leadingJetPt) {
 	    data.subleadingJetPt = c->akVs3Calo.jtpt[j];
+	    data.subleadingJetPtUnCor = ptUnCor;
 	    data.subleadingJetEta = c->akVs3Calo.jteta[j];
 	    data.subleadingJetPhi = c->akVs3Calo.jtphi[j];
+	    data.subleadingJetRefPt = c->akVs3Calo.refpt[j];
+	    data.subleadingJetTrkMax = c->akVs3Calo.trackMax[j];
 	    data.subleadingJetIt = j;
          }
-	 if (c->akVs3Calo.jtpt[j]<data.subleadingJetPt) break;	 
+//	 if (c->akVs3Calo.jtpt[j]<data.subleadingJetPt) break;	 
       } 
 
       // Select generator level leading and subleading jet
@@ -103,10 +134,14 @@ void dijetMPT(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
 	    data.gensubleadingJetEta = c->akVs3Calo.geneta[j];
 	    data.gensubleadingJetPhi = c->akVs3Calo.genphi[j];
          }
-	 if (c->akVs3Calo.genpt[j]<data.gensubleadingJetPt) break;	 
+//	 if (c->akVs3Calo.genpt[j]<data.gensubleadingJetPt) break;	 
       } 
       
       //if (data.subleadingJetPt<50||data.subleadingJetPt>80) continue;
+      double dijetAvgPhi = getAvePhi(data.leadingJetPhi,data.subleadingJetPhi);
+      double gendijetAvgPhi = getAvePhi(data.genleadingJetPhi,data.gensubleadingJetPhi);
+      data.dijetPhi = dijetAvgPhi;
+      data.genDijetPhi = gendijetAvgPhi;
       
       // MPT calculation
       for (int k=0;k<10;k++)
@@ -128,6 +163,14 @@ void dijetMPT(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
 	 }
       }
 */
+
+      data.leadingJetNTrk1=0;
+      data.leadingJetNTrk2=0;
+      data.leadingJetNTrk4=0;
+      data.subleadingJetNTrk1=0;
+      data.subleadingJetNTrk2=0;
+      data.subleadingJetNTrk4=0;
+      
       for (int j=0;j<c->track.nTrk;j++) {
          if (fabs(c->track.trkEta[j])>2.4) continue;
 	 if ((c->track.trkPt[j])<0.5) continue;
@@ -143,11 +186,17 @@ void dijetMPT(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
 	 double dr1 = sqrt(dphi1*dphi1+deta1*deta1);
 	 double dr2 = sqrt(dphi2*dphi2+deta2*deta2);
 	 
+	 if (dr1<0.3&&c->track.trkPt[j]>1) data.leadingJetNTrk1++;
+	 if (dr2<0.3&&c->track.trkPt[j]>1) data.subleadingJetNTrk1++;
+	 if (dr1<0.3&&c->track.trkPt[j]>2) data.leadingJetNTrk2++;
+	 if (dr2<0.3&&c->track.trkPt[j]>2) data.subleadingJetNTrk2++;
+	 if (dr1<0.3&&c->track.trkPt[j]>4) data.leadingJetNTrk4++;
+	 if (dr2<0.3&&c->track.trkPt[j]>4) data.subleadingJetNTrk4++;
+	 
 	 double trkWt=c->getTrackCorrection(j);
          double trkWt2=0;         
 
 	 //cout <<trkWt<<endl;
-         double dijetAvgPhi = getAvePhi(data.leadingJetPhi,data.subleadingJetPhi);
 	 double mptTrk = -c->track.trkPt[j]*cos(c->track.trkPhi[j]-dijetAvgPhi)*trkWt;
 	 for (int k=0;k<10;k++) {
    	    if (c->track.trkPt[j]>trackPtBinL[k]&&c->track.trkPt[j]<=trackPtBinH[k]) data.cormpt[k]+=mptTrk;
@@ -172,7 +221,6 @@ void dijetMPT(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
          if (fabs(c->track.pEta[j])>2.4) continue;
 	 //if (fabs(c->track.pPt[j])<0.5) continue;
 
-         double dijetAvgPhi = getAvePhi(data.leadingJetPhi,data.subleadingJetPhi);
 	       
 	 double mptPTrk = -c->track.pPt[j]*cos(c->track.pPhi[j]-dijetAvgPhi);
 	 
@@ -192,7 +240,6 @@ void dijetMPT(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
 	 histos2_MergedGeneral.hGenDR->Fill(dr1,ptWeight);
 
 
-         double gendijetAvgPhi = getAvePhi(data.genleadingJetPhi,data.gensubleadingJetPhi);
 	 double mptTrk = -c->track.pPt[j]*cos(c->track.pPhi[j]-gendijetAvgPhi);
 
 	 for (int k=0;k<10;k++) {
