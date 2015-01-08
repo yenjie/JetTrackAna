@@ -63,26 +63,56 @@ class JetData
 {
    public:
    int hiBin;
+   float dijetPhi;
+   float genDijetPhi;
    float leadingJetPt;  
+   float leadingJetRefPt;  
    float leadingJetEta;  
    float leadingJetPhi;  
+   float leadingJetTrkMax;  
+   float leadingJetNPF;  
+   float leadingJetPtUnCor;  
+   float leadingJetNTrk1;  
+   float leadingJetNTrk2;  
+   float leadingJetNTrk4;  
    float subleadingJetPt;
+   float subleadingJetRefPt;  
    float subleadingJetEta;
    float subleadingJetPhi;
+   float subleadingJetTrkMax;  
+   float subleadingJetNPF;  
+   float subleadingJetPtUnCor;  
+   float subleadingJetNTrk1;  
+   float subleadingJetNTrk2;  
+   float subleadingJetNTrk4;  
+   float thirdleadingJetPt;
+   float thirdleadingJetRefPt;  
+   float thirdleadingJetEta;
+   float thirdleadingJetPhi;
+   float thirdleadingJetTrkMax;  
+   float thirdleadingJetNPF;  
+   float thirdleadingJetPtUnCor;  
+   float thirdleadingJetNTrk1;  
+   float thirdleadingJetNTrk2;  
+   float thirdleadingJetNTrk4;  
    float genleadingJetPt;  
    float genleadingJetEta;  
    float genleadingJetPhi;  
    float gensubleadingJetPt;
    float gensubleadingJetEta;
    float gensubleadingJetPhi;
-   float mpt;
-   float cormpt;
-   float cormpt2;
-   float genPMpt;
-   float genMpt;
+   float genthirdleadingJetPt;
+   float genthirdleadingJetEta;
+   float genthirdleadingJetPhi;
+   float mpt[10];
+   float cormpt[10];
+   float cormpt2[10];
+   float genPMpt[10];
+   float genMpt[10];
    
    int    leadingJetIt;  
    int    subleadingJetIt;
+   int    thirdleadingJetIt;
    
    int nTrk;
    float trkPt[10000];
@@ -98,25 +128,54 @@ class JetData
    JetData(TTree *t, bool setBranch=1) {
       if (setBranch){
       t->Branch("hiBin",&hiBin,"hiBin/I");
+      t->Branch("dijetPhi",&dijetPhi,"dijetPhi/F");
+      t->Branch("genDijetPhi",&genDijetPhi,"genDijetPhi/F");
       t->Branch("leadingJetPt",&leadingJetPt,"leadingJetPt/F");
+      t->Branch("leadingJetPtUnCor",&leadingJetPtUnCor,"leadingJetPtUnCor/F");
+      t->Branch("leadingJetRefPt",&leadingJetRefPt,"leadingJetRefPt/F");
       t->Branch("leadingJetPhi",&leadingJetPhi,"leadingJetPhi/F");
       t->Branch("leadingJetEta",&leadingJetEta,"leadingJetEta/F");
+      t->Branch("leadingJetNPF",&leadingJetNPF,"leadingJetNPF/F");
+      t->Branch("leadingJetTrkMax",&leadingJetTrkMax,"leadingJetTrkMax/F");
+      t->Branch("leadingJetNTrk1",&leadingJetNTrk1,"leadingJetNTrk1/F");
+      t->Branch("leadingJetNTrk2",&leadingJetNTrk2,"leadingJetNTrk2/F");
+      t->Branch("leadingJetNTrk4",&leadingJetNTrk4,"leadingJetNTrk4/F");
       t->Branch("subleadingJetPt",&subleadingJetPt,"subleadingJetPt/F");
+      t->Branch("subleadingJetPtUnCor",&subleadingJetPtUnCor,"subleadingJetPtUnCor/F");
+      t->Branch("subleadingJetRefPt",&subleadingJetRefPt,"subleadingJetRefPt/F");
       t->Branch("subleadingJetPhi",&subleadingJetPhi,"subleadingJetPhi/F");
       t->Branch("subleadingJetEta",&subleadingJetEta,"subleadingJetEta/F");
+      t->Branch("subleadingJetNPF",&subleadingJetNPF,"subleadingJetNPF/F");
+      t->Branch("subleadingJetTrkMax",&subleadingJetTrkMax,"subleadingJetTrkMax/F");
+      t->Branch("subleadingJetNTrk1",&subleadingJetNTrk1,"subleadingJetNTrk1/F");
+      t->Branch("subleadingJetNTrk2",&subleadingJetNTrk2,"subleadingJetNTrk2/F");
+      t->Branch("subleadingJetNTrk4",&subleadingJetNTrk4,"subleadingJetNTrk4/F");
+      t->Branch("thirdleadingJetPtUnCor",&thirdleadingJetPtUnCor,"thirdleadingJetPtUnCor/F");
+      t->Branch("thirdleadingJetRefPt",&thirdleadingJetRefPt,"thirdleadingJetRefPt/F");
+      t->Branch("thirdleadingJetPhi",&thirdleadingJetPhi,"thirdleadingJetPhi/F");
+      t->Branch("thirdleadingJetEta",&thirdleadingJetEta,"thirdleadingJetEta/F");
+      t->Branch("thirdleadingJetNPF",&thirdleadingJetNPF,"thirdleadingJetNPF/F");
+      t->Branch("thirdleadingJetTrkMax",&thirdleadingJetTrkMax,"thirdleadingJetTrkMax/F");
+      t->Branch("thirdleadingJetNTrk1",&thirdleadingJetNTrk1,"thirdleadingJetNTrk1/F");
+      t->Branch("thirdleadingJetNTrk2",&thirdleadingJetNTrk2,"thirdleadingJetNTrk2/F");
+      t->Branch("thirdleadingJetNTrk4",&thirdleadingJetNTrk4,"thirdleadingJetNTrk4/F");
       t->Branch("genleadingJetPt",&genleadingJetPt,"genleadingJetPt/F");
       t->Branch("genleadingJetPhi",&genleadingJetPhi,"genleadingJetPhi/F");
       t->Branch("genleadingJetEta",&genleadingJetEta,"genleadingJetEta/F");
       t->Branch("gensubleadingJetPt",&gensubleadingJetPt,"gensubleadingJetPt/F");
       t->Branch("gensubleadingJetPhi",&gensubleadingJetPhi,"gensubleadingJetPhi/F");
       t->Branch("gensubleadingJetEta",&gensubleadingJetEta,"gensubleadingJetEta/F");
+      t->Branch("genthirdleadingJetPt",&genthirdleadingJetPt,"genthirdleadingJetPt/F");
+      t->Branch("genthirdleadingJetPhi",&genthirdleadingJetPhi,"genthirdleadingJetPhi/F");
+      t->Branch("genthirdleadingJetEta",&genthirdleadingJetEta,"genthirdleadingJetEta/F");
       t->Branch("leadingJetIt",&leadingJetIt,"leadingJetIt/I");
       t->Branch("subleadingJetIt",&subleadingJetIt,"subleadingJetIt/I");
-      t->Branch("mpt",&mpt,"mpt/F");
-      t->Branch("cormpt",&cormpt,"cormpt/F");
-      t->Branch("cormpt2",&cormpt2,"cormpt2/F");
-      t->Branch("genMpt",&genMpt,"genMpt/F");
-      t->Branch("genPMpt",&genPMpt,"genPMpt/F");
+      t->Branch("thirdleadingJetIt",&thirdleadingJetIt,"thirdleadingJetIt/I");
+      t->Branch("mpt",mpt,"mpt[10]/F");
+      t->Branch("cormpt",cormpt,"cormpt[10]/F");
+      t->Branch("cormpt2",cormpt2,"cormpt2[10]/F");
+      t->Branch("genMpt",genMpt,"genMpt[10]/F");
+      t->Branch("genPMpt",genPMpt,"genPMpt[10]/F");
       t->Branch("nTrk",&nTrk,"nTrk/I");
       t->Branch("trkPt",trkPt,"trkPt[nTrk]/F");
       t->Branch("trkRmin",trkRmin,"trkRmin[nTrk]/F");
@@ -514,4 +573,47 @@ TGraphAsymmErrors *getEfficiency(TTree *t,char *variable,int nBin, double binL, 
    TGraphAsymmErrors *g = new TGraphAsymmErrors(hPass);
    delete hPass,hTotal;
    return g;
+}
+
+Float_t getFlippedPhi(Float_t inPhi)
+{
+  Float_t outPhi;
+
+  if(TMath::Abs(inPhi) > TMath::Pi()){
+    // std::cout << "getFlippedPhi: inPhi is outside accepted range, return -10" << std::endl;
+    return -10;
+  }
+  else if(inPhi > 0)
+    outPhi = inPhi - TMath::Pi();
+  else
+    outPhi = inPhi + TMath::Pi();
+
+  return outPhi;
+}
+
+Bool_t sameSign(Float_t num1, Float_t num2){
+  if((num1 > 0 && num2 > 0) || (num1 < 0 && num2 < 0)) return true;
+
+  return false;
+}
+
+Float_t getAvePhi(Float_t inLeadPhi, Float_t inSubLeadPhi)
+{
+  Float_t flipPhi = getFlippedPhi(inSubLeadPhi);
+  Float_t avePhi;
+
+  if(sameSign(inLeadPhi, flipPhi) || (TMath::Abs(inLeadPhi) < TMath::Pi()/2 && TMath::Abs(flipPhi) < TMath::Pi()/2))
+    avePhi = (flipPhi + inLeadPhi)/2;
+  else if(TMath::Abs(inLeadPhi) > TMath::Pi()/2 && TMath::Abs(flipPhi) > TMath::Pi()/2){
+    avePhi = (flipPhi + inLeadPhi)/2;
+    if(avePhi > 0)
+      avePhi = TMath::Pi() - avePhi;
+    else
+      avePhi = -TMath::Pi() - avePhi;
+  }
+  else{
+    avePhi = 0.;
+  }
+
+  return avePhi;
 }
