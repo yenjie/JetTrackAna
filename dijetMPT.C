@@ -81,7 +81,7 @@ doPP=0, bool doPPTracking=0)
       data.subleadingJetIt = -1;						// reconstructed subleading jet index
       data.genleadingJetPt = -1;						// gen level leading jet
       data.gensubleadingJetPt = -1;						// gen level subleading jet
-      jets - c->akVs3Calo;    
+      jets = c->akVs3Calo;    
 //      if (doPP==0) jets = c->ak3Calo; else jets = c->akVs3Calo;
       
       // Event selection
