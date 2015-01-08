@@ -9,11 +9,14 @@
 
 #define PI 3.141592653589793238462643
 
-void dijetMPT(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/HIMC/Jet80/Track8_Jet21_STARTHI53_LV1/merged3/HiForest_Pythia_Hydjet_Jet80_Track8_Jet21_STARTHI53_LV1_merged_forest_0.root")
+void dijetMPT(double tag=0, char *infName =
+"/mnt/hadoop/cms/store/user/dgulhan/HIMC/Jet80/Track8_Jet21_STARTHI53_LV1/merged3/HiForest_Pythia_Hydjet_Jet80_Track8_Jet21_STARTHI53_LV1_merged_forest_0.root", bool
+doPP=0, bool doPPTracking=0)
 {
    // Define the input file and HiForest
-   
-   HiForest *c = new HiForest(infName);
+   collisionType cMode = cPbPb;
+   if (doPP) cMode= cPP;
+   HiForest *c = new HiForest(infName,"",cMode);
  //  c->hasPFTree=0;
    c->hasPhotonTree=0;
    c->hasTowerTree=0;
@@ -35,8 +38,8 @@ void dijetMPT(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
    c->hasAkVs4PFJetTree=0;
    c->hasAkVs5PFJetTree=0;
 //   c->doTrackCorrections=1;
-//   c->InitTree();
-   fragmentation_JEC *FF_JEC=new fragmentation_JEC(3, 1, 0, 1,1); //3rd variable is only for when do_PbPb is false
+   c->InitTree();
+   fragmentation_JEC *FF_JEC=new fragmentation_JEC(3, doPP==0, doPPTracking, 1,1); //3rd variable is only for when do_PbPb is false
    FF_JEC->set_correction();
 
    
@@ -61,80 +64,90 @@ void dijetMPT(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
    double trackPtBinL[10] = { 0.5,    0,   0.5, 1.0, 2.0, 4.0, 8.0};
    double trackPtBinH[10] = { 300, 0.5, 1.0, 2.0, 4.0, 8.0, 300};
    
+   Jets jets;
+   
    // Main loop
    for (int i=0;i<c->GetEntries();i++) {
       c->GetEntry(i);
       data.hiBin = c->evt.hiBin;
+      if (doPP==1) data.hiBin=0;
       if (i % 1000 == 0) cout <<i<<" / "<<c->GetEntries()<<endl;
 
-      data.leadingJetPt = -1;      						// reconstructed leading jet
-      data.subleadingJetPt = -1;						// reconstructed subleading jet
+      data.leadingJetPt = -1;      						// reconstructed leading jet with ff cor
+      data.subleadingJetPt = -1;						// reconstructed subleading jet with ff cor
+      data.leadingJetPtUnCor = -1;      					// reconstructed leading jet
+      data.subleadingJetPtUnCor = -1;						// reconstructed subleading jet
       data.leadingJetIt = -1;							// reconstructed leading jet index
       data.subleadingJetIt = -1;						// reconstructed subleading jet index
       data.genleadingJetPt = -1;						// gen level leading jet
       data.gensubleadingJetPt = -1;						// gen level subleading jet
+      jets - c->akVs3Calo;    
+//      if (doPP==0) jets = c->ak3Calo; else jets = c->akVs3Calo;
       
       // Event selection
       if (fabs(c->evt.vz)>15) continue;
 //      if (!c->selectEvent()) continue;
 
       // Select leading and subleading jet
-      for (int j=0;j<c->akVs3Calo.nref;j++) {
-         if (fabs(c->akVs3Calo.jteta[j])>2) continue;
+      for (int j=0;j<jets.nref;j++) {
+         if (fabs(jets.jteta[j])>2) continue;
 
  
          int npf=0;
          for(int ipf=0;ipf<c->pf.nPFpart;ipf++){
-            if(0){
-//               if(FF_JEC->passes_PF_selection(c->pf.pfPt[ipf], c->pf.pfEta[ipf], c->pf.pfPhi[ipf], c->pf.pfId[ipf], ->jteta[j], fjet->jtphi[j])) npf++;
+            if(doPP){
+               if(FF_JEC->passes_PF_selection(c->pf.pfPt[ipf], c->pf.pfEta[ipf], c->pf.pfPhi[ipf], c->pf.pfId[ipf], jets.jteta[j], jets.jtphi[j])) npf++;
             }else{
-               if(FF_JEC->passes_PF_selection(c->pf.pfVsPt[ipf], c->pf.pfEta[ipf], c->pf.pfPhi[ipf], c->pf.pfId[ipf], c->akVs3Calo.jteta[j], c->akVs3Calo.jtphi[j])) npf++;
+               if(FF_JEC->passes_PF_selection(c->pf.pfVsPt[ipf], c->pf.pfEta[ipf], c->pf.pfPhi[ipf], c->pf.pfId[ipf], jets.jteta[j], jets.jtphi[j])) npf++;
             }
          }
 
         //Then get the corrected pt for each jet before dijet selection by doing
 
-        double corrected_pt=FF_JEC->get_corrected_pt(c->akVs3Calo.jtpt[j], npf, c->evt.hiBin);
-   
+        double corrected_pt=0;
+	if (doPP==0) corrected_pt=FF_JEC->get_corrected_pt(jets.jtpt[j], npf, c->evt.hiBin);
+               else  corrected_pt=FF_JEC->get_corrected_pt(jets.jtpt[j], npf);
         double residual_corrected_pt=FF_JEC->get_residual_corrected_pt(corrected_pt,c->evt.hiBin);
-        double ptUnCor=c->akVs3Calo.jtpt[j];
-	c->akVs3Calo.jtpt[j]=residual_corrected_pt;
+        double ptUnCor=jets.jtpt[j];
+	jets.jtpt[j]=residual_corrected_pt;
 	
-         if (c->akVs3Calo.jtpt[j]>data.leadingJetPt) {
-	    data.leadingJetPt = c->akVs3Calo.jtpt[j];
+         if (jets.jtpt[j]>data.leadingJetPt) {
+	    data.leadingJetPt = jets.jtpt[j];
 	    data.leadingJetPtUnCor = ptUnCor;
-	    data.leadingJetEta = c->akVs3Calo.jteta[j];
-	    data.leadingJetPhi = c->akVs3Calo.jtphi[j];
-	    data.leadingJetRefPt = c->akVs3Calo.refpt[j];
-	    data.leadingJetTrkMax = c->akVs3Calo.trackMax[j];
+	    data.leadingJetEta = jets.jteta[j];
+	    data.leadingJetPhi = jets.jtphi[j];
+	    data.leadingJetRefPt = jets.refpt[j];
+	    data.leadingJetTrkMax = jets.trackMax[j];
 	    data.leadingJetIt = j;
+	    data.leadingJetNPF = npf;
 	 }   
-	 if (c->akVs3Calo.jtpt[j]>data.subleadingJetPt && c->akVs3Calo.jtpt[j] < data.leadingJetPt) {
-	    data.subleadingJetPt = c->akVs3Calo.jtpt[j];
+	 if (jets.jtpt[j]>data.subleadingJetPt && jets.jtpt[j] < data.leadingJetPt) {
+	    data.subleadingJetPt = jets.jtpt[j];
 	    data.subleadingJetPtUnCor = ptUnCor;
-	    data.subleadingJetEta = c->akVs3Calo.jteta[j];
-	    data.subleadingJetPhi = c->akVs3Calo.jtphi[j];
-	    data.subleadingJetRefPt = c->akVs3Calo.refpt[j];
-	    data.subleadingJetTrkMax = c->akVs3Calo.trackMax[j];
+	    data.subleadingJetEta = jets.jteta[j];
+	    data.subleadingJetPhi = jets.jtphi[j];
+	    data.subleadingJetRefPt = jets.refpt[j];
+	    data.subleadingJetTrkMax = jets.trackMax[j];
 	    data.subleadingJetIt = j;
+	    data.subleadingJetNPF = npf;
          }
-//	 if (c->akVs3Calo.jtpt[j]<data.subleadingJetPt) break;	 
+//	 if (jets.jtpt[j]<data.subleadingJetPt) break;	 
       } 
 
       // Select generator level leading and subleading jet
-      for (int j=0;j<c->akVs3Calo.ngen;j++) {
-         if (fabs(c->akVs3Calo.geneta[j])>2) continue;
-         if (c->akVs3Calo.genpt[j]>data.genleadingJetPt) {
-	    data.genleadingJetPt = c->akVs3Calo.genpt[j];
-	    data.genleadingJetEta = c->akVs3Calo.geneta[j];
-	    data.genleadingJetPhi = c->akVs3Calo.genphi[j];
+      for (int j=0;j<jets.ngen;j++) {
+         if (fabs(jets.geneta[j])>2) continue;
+         if (jets.genpt[j]>data.genleadingJetPt) {
+	    data.genleadingJetPt = jets.genpt[j];
+	    data.genleadingJetEta = jets.geneta[j];
+	    data.genleadingJetPhi = jets.genphi[j];
 	 }   
-	 if (c->akVs3Calo.genpt[j]>data.gensubleadingJetPt && c->akVs3Calo.genpt[j] < data.genleadingJetPt) {
-	    data.gensubleadingJetPt = c->akVs3Calo.genpt[j];
-	    data.gensubleadingJetEta = c->akVs3Calo.geneta[j];
-	    data.gensubleadingJetPhi = c->akVs3Calo.genphi[j];
+	 if (jets.genpt[j]>data.gensubleadingJetPt && jets.genpt[j] < data.genleadingJetPt) {
+	    data.gensubleadingJetPt = jets.genpt[j];
+	    data.gensubleadingJetEta = jets.geneta[j];
+	    data.gensubleadingJetPhi = jets.genphi[j];
          }
-//	 if (c->akVs3Calo.genpt[j]<data.gensubleadingJetPt) break;	 
+//	 if (jets.genpt[j]<data.gensubleadingJetPt) break;	 
       } 
       
       //if (data.subleadingJetPt<50||data.subleadingJetPt>80) continue;
@@ -142,7 +155,7 @@ void dijetMPT(double tag=0, char *infName = "/mnt/hadoop/cms/store/user/dgulhan/
       double gendijetAvgPhi = getAvePhi(data.genleadingJetPhi,data.gensubleadingJetPhi);
       data.dijetPhi = dijetAvgPhi;
       data.genDijetPhi = gendijetAvgPhi;
-      
+
       // MPT calculation
       for (int k=0;k<10;k++)
       {
