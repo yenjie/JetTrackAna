@@ -230,6 +230,20 @@ doPbPb=0, bool doPPTracking=0, int conesize=3, int jetType=0)
       data.thirdleadingJetNTrk2=0;
       data.thirdleadingJetNTrk4=0;
       data.thirdleadingJetNTrk8=0;
+
+      data.leadingJetSumPt1=0;
+      data.leadingJetSumPt2=0;
+      data.leadingJetSumPt4=0;
+      data.leadingJetSumPt8=0;
+      data.subleadingJetSumPt1=0;
+      data.subleadingJetSumPt2=0;
+      data.subleadingJetSumPt4=0;
+      data.subleadingJetSumPt8=0;
+      data.thirdleadingJetSumPt1=0;
+      data.thirdleadingJetSumPt2=0;
+      data.thirdleadingJetSumPt4=0;
+      data.thirdleadingJetSumPt8=0;
+
       
       for (int j=0;j<c->track.nTrk;j++) {
          if (fabs(c->track.trkEta[j])>2.4) continue;
