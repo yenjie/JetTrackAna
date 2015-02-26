@@ -248,10 +248,21 @@ doPbPb=0, bool doPPTracking=0, int conesize=3, int jetType=0)
       for (int j=0;j<c->track.nTrk;j++) {
          if (fabs(c->track.trkEta[j])>2.4) continue;
 	 if ((c->track.trkPt[j])<0.5) continue;
-         if (!(c->track.highPurity[j] &&
+         
+	 // mpt analysis selection
+	 /*
+	 if (!(c->track.highPurity[j] &&
               fabs(c->track.trkDxy1[j]/c->track.trkDxyError1[j])<3.0 &&
               fabs(c->track.trkDz1[j]/c->track.trkDzError1[j])<3.0 && 
               (c->track.trkPtError[j]/c->track.trkPt[j])<0.1)) continue;
+         */
+	 
+	 // D meson analysis selection
+	 if (!(
+              (c->track.trkNHit[j])>=12&&
+	      (c->track.trkChi2[j]/c->track.trkNdof[j]/c->track.trkNlayer[j])<0.25&&
+              (c->track.trkPtError[j]/c->track.trkPt[j])<0.075)) continue;
+         	 
 	 double dphi1 = acos(cos(c->track.trkPhi[j]-data.leadingJetPhi));
          double deta1 = fabs(c->track.trkEta[j]-data.leadingJetEta);
          double dphi2 = acos(cos(c->track.trkPhi[j]-data.subleadingJetPhi));
@@ -279,18 +290,18 @@ doPbPb=0, bool doPPTracking=0, int conesize=3, int jetType=0)
 	 if (dr2<0.3&&c->track.trkPt[j]>8) data.subleadingJetNTrk8++;
 	 if (dr3<0.3&&c->track.trkPt[j]>8) data.thirdleadingJetNTrk8++;
 
-	 if (dr1<0.3&&c->track.trkPt[j]>1) data.leadingJetSumPt1+=c->track.trkPt[j]*trkWt;
-	 if (dr2<0.3&&c->track.trkPt[j]>1) data.subleadingJetSumPt1+=c->track.trkPt[j]*trkWt;
-	 if (dr3<0.3&&c->track.trkPt[j]>1) data.thirdleadingJetSumPt1+=c->track.trkPt[j]*trkWt;
-	 if (dr1<0.3&&c->track.trkPt[j]>2) data.leadingJetSumPt2+=c->track.trkPt[j]*trkWt;
-	 if (dr2<0.3&&c->track.trkPt[j]>2) data.subleadingJetSumPt2+=c->track.trkPt[j]*trkWt;
-	 if (dr3<0.3&&c->track.trkPt[j]>2) data.thirdleadingJetSumPt2+=c->track.trkPt[j]*trkWt;
-	 if (dr1<0.3&&c->track.trkPt[j]>4) data.leadingJetSumPt4+=c->track.trkPt[j]*trkWt;
-	 if (dr2<0.3&&c->track.trkPt[j]>4) data.subleadingJetSumPt4+=c->track.trkPt[j]*trkWt;
-	 if (dr3<0.3&&c->track.trkPt[j]>4) data.thirdleadingJetSumPt4+=c->track.trkPt[j]*trkWt;
-	 if (dr1<0.3&&c->track.trkPt[j]>8) data.leadingJetSumPt8+=c->track.trkPt[j]*trkWt;
-	 if (dr2<0.3&&c->track.trkPt[j]>8) data.subleadingJetSumPt8+=c->track.trkPt[j]*trkWt;
-	 if (dr3<0.3&&c->track.trkPt[j]>8) data.thirdleadingJetSumPt8+=c->track.trkPt[j]*trkWt;
+	 if (dr1<0.3&&c->track.trkPt[j]>1) data.leadingJetSumPt1+=c->track.trkPt[j];
+	 if (dr2<0.3&&c->track.trkPt[j]>1) data.subleadingJetSumPt1+=c->track.trkPt[j];
+	 if (dr3<0.3&&c->track.trkPt[j]>1) data.thirdleadingJetSumPt1+=c->track.trkPt[j];
+	 if (dr1<0.3&&c->track.trkPt[j]>2) data.leadingJetSumPt2+=c->track.trkPt[j];
+	 if (dr2<0.3&&c->track.trkPt[j]>2) data.subleadingJetSumPt2+=c->track.trkPt[j];
+	 if (dr3<0.3&&c->track.trkPt[j]>2) data.thirdleadingJetSumPt2+=c->track.trkPt[j];
+	 if (dr1<0.3&&c->track.trkPt[j]>4) data.leadingJetSumPt4+=c->track.trkPt[j];
+	 if (dr2<0.3&&c->track.trkPt[j]>4) data.subleadingJetSumPt4+=c->track.trkPt[j];
+	 if (dr3<0.3&&c->track.trkPt[j]>4) data.thirdleadingJetSumPt4+=c->track.trkPt[j];
+	 if (dr1<0.3&&c->track.trkPt[j]>8) data.leadingJetSumPt8+=c->track.trkPt[j];
+	 if (dr2<0.3&&c->track.trkPt[j]>8) data.subleadingJetSumPt8+=c->track.trkPt[j];
+	 if (dr3<0.3&&c->track.trkPt[j]>8) data.thirdleadingJetSumPt8+=c->track.trkPt[j];
 	 
 
 	 //cout <<trkWt<<endl;
